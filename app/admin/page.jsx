@@ -2,20 +2,21 @@
 import React, { useEffect, useState } from "react";
 
 const resources = [
-  { name: "Singers", api: "/api/singers", fields: ["name", "image", "role", "bio"] },
-  { name: "Options", api: "/api/options", fields: ["name", "description", "image"] },
-  { name: "Concepts", api: "/api/concepts", fields: ["name", "description", "image"] },
+  { name: "Singers", api: "/api/singers", fields: ["name", "image", "role"] },
+  { name: "Options", api: "/api/options", fields: ["name", "description", "image"], multilingual: true },
+  { name: "Concepts", api: "/api/concepts", fields: ["name", "description", "image"], multilingual: true },
   { name: "Videos", api: "/api/videos", fields: ["title", "url"], isMedia: true, mediaType: "video" },
   { name: "Pictures", api: "/api/pictures", fields: ["url"], isMedia: true, mediaType: "image", allowUpload: true },
 ];
 
-function ResourceAdmin({ name, api, fields, isMedia, mediaType, allowUpload }) {
+function ResourceAdmin({ name, api, fields, isMedia, mediaType, allowUpload, multilingual }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({});
   const [editId, setEditId] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const fetchItems = async () => {
     setLoading(true);
@@ -50,6 +51,17 @@ function ResourceAdmin({ name, api, fields, isMedia, mediaType, allowUpload }) {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  // Helper for multilingual fields
+  const handleMultiLangChange = (field, lang, value) => {
+    setFormData({
+      ...formData,
+      [field]: {
+        ...(formData[field] || {}),
+        [lang]: value,
+      },
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -91,6 +103,22 @@ function ResourceAdmin({ name, api, fields, isMedia, mediaType, allowUpload }) {
     fetchItems();
   };
 
+  // For single image upload in forms
+  const handleSingleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadingImage(true);
+    const formData = new FormData();
+    formData.append("files", file);
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+    const urls = await res.json();
+    setFormData({ ...formData, image: urls[0] });
+    setUploadingImage(false);
+  };
+
   return (
     <div style={{ border: "1px solid #ccc", borderRadius: 8, margin: 24, padding: 24, position: "relative", backgroundColor: "#fff" }}>
       <h2 style={{ fontSize: 24, marginBottom: 16 }}>{name}</h2>
@@ -116,12 +144,14 @@ function ResourceAdmin({ name, api, fields, isMedia, mediaType, allowUpload }) {
           </label>
         )}
         {!allowUpload && (
-          <button
-            style={{ padding: "6px 16px", borderRadius: 4, background: "#0070f3", color: "#fff", border: "none", cursor: "pointer" }}
-            onClick={handleAdd}
-          >
-            + Add {name.slice(0, -1)}
-          </button>
+          <>
+            <button
+              style={{ padding: "6px 16px", borderRadius: 4, background: "#0070f3", color: "#fff", border: "none", cursor: "pointer" }}
+              onClick={handleAdd}
+            >
+              + Add {name.slice(0, -1)}
+            </button>
+          </>
         )}
       </div>
       {loading ? (
@@ -169,9 +199,15 @@ function ResourceAdmin({ name, api, fields, isMedia, mediaType, allowUpload }) {
               <tr key={item._id}>
                 {fields.map((f) => (
                   <td key={f} style={{ borderBottom: "1px solid #f5f5f5", padding: 8 }}>
-                    {typeof item[f] === "object" && item[f] !== null
-                      ? item[f].en || Object.values(item[f])[0]
-                      : item[f]}
+                    {f === "image" ? (
+                      <img src={item[f]} alt="" style={{ width: 50, height: 50, objectFit: "cover", borderRadius: 4 }} />
+                    ) : multilingual && (f === "name" || f === "description") && typeof item[f] === "object" && item[f] !== null ? (
+                      item[f].en || Object.values(item[f])[0]
+                    ) : typeof item[f] === "object" && item[f] !== null ? (
+                      item[f].en || Object.values(item[f])[0]
+                    ) : (
+                      item[f]
+                    )}
                   </td>
                 ))}
                 <td style={{ borderBottom: "1px solid #f5f5f5", padding: 8 }}>
@@ -196,14 +232,47 @@ function ResourceAdmin({ name, api, fields, isMedia, mediaType, allowUpload }) {
             {fields.map((f) => (
               <div key={f} style={{ marginBottom: 12 }}>
                 <label style={{ display: "block", marginBottom: 4 }}>{f}</label>
-                <input
-                  name={f}
-                  value={formData[f] || ""}
-                  onChange={handleChange}
-                  style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
-                  required
-                  disabled={uploading}
-                />
+                {multilingual && (f === "name" || f === "description") ? (
+                  <div style={{ display: "flex", gap: 8 }}>
+                    {["en", "fr", "he"].map((lang) => (
+                      <input
+                        key={lang}
+                        name={`${f}_${lang}`}
+                        placeholder={`${f} (${lang})`}
+                        value={(formData[f] && formData[f][lang]) || ""}
+                        onChange={e => handleMultiLangChange(f, lang, e.target.value)}
+                        style={{ flex: 1, padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
+                        required={lang === "en"}
+                        disabled={uploading}
+                      />
+                    ))}
+                  </div>
+                ) : f === "image" ? (
+                  <div>
+                    {formData[f] && (
+                      <img src={formData[f]} alt="Preview" style={{ width: 100, height: 100, objectFit: "cover", borderRadius: 4, marginBottom: 8 }} />
+                    )}
+                    <label style={{ display: "inline-block", background: "#28a745", color: "#fff", borderRadius: 4, padding: "6px 12px", cursor: "pointer", fontSize: 14 }}>
+                      {uploadingImage ? "Uploading..." : "Upload Image"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: "none" }}
+                        onChange={handleSingleImageUpload}
+                        disabled={uploadingImage}
+                      />
+                    </label>
+                  </div>
+                ) : (
+                  <input
+                    name={f}
+                    value={formData[f] || ""}
+                    onChange={handleChange}
+                    style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #ccc" }}
+                    required
+                    disabled={uploading}
+                  />
+                )}
               </div>
             ))}
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>

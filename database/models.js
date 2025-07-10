@@ -4,18 +4,17 @@ export const SingerModel = {
   name: 'string',
   image: 'string', // URL or filename
   role: 'string',
-  bio: 'string',
 };
 
 export const OptionModel = {
-  name: 'string',
-  description: 'string',
+  name: { en: 'string', fr: 'string', he: 'string' },
+  description: { en: 'string', fr: 'string', he: 'string' },
   image: 'string', // URL or filename
 };
 
 export const ConceptModel = {
-  name: 'string',
-  description: 'string',
+  name: { en: 'string', fr: 'string', he: 'string' },
+  description: { en: 'string', fr: 'string', he: 'string' },
   image: 'string', // URL or filename
 };
 
