@@ -1,6 +1,160 @@
 "use client";
 import React, { useEffect, useState } from "react";
 
+// Login component
+function LoginForm({ onLogin }) {
+  const [credentials, setCredentials] = useState({ username: "", password: "" });
+  const [error, setError] = useState("");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (credentials.username === "admin" && credentials.password === "admin123") {
+      localStorage.setItem("adminAuthenticated", "true");
+      onLogin();
+    } else {
+      setError("Invalid username or password");
+    }
+  };
+
+  return (
+    <div style={{ 
+      display: "flex", 
+      justifyContent: "center", 
+      alignItems: "center", 
+      minHeight: "100vh",
+      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+    }}>
+      <div style={{
+        background: "#fff",
+        padding: "40px",
+        borderRadius: "12px",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
+        width: "100%",
+        maxWidth: "400px"
+      }}>
+        <h1 style={{ 
+          textAlign: "center", 
+          marginBottom: "32px", 
+          color: "#333",
+          fontSize: "28px",
+          fontWeight: "600"
+        }}>
+          Admin Login
+        </h1>
+        
+        {error && (
+          <div style={{
+            background: "#fee",
+            color: "#c33",
+            padding: "12px",
+            borderRadius: "6px",
+            marginBottom: "20px",
+            textAlign: "center"
+          }}>
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: "20px" }}>
+            <label style={{ 
+              display: "block", 
+              marginBottom: "8px", 
+              color: "#555",
+              fontWeight: "500"
+            }}>
+              Username
+            </label>
+            <input
+              type="text"
+              value={credentials.username}
+              onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
+              style={{
+                width: "100%",
+                padding: "12px",
+                borderRadius: "6px",
+                border: "1px solid #ddd",
+                fontSize: "16px",
+                boxSizing: "border-box"
+              }}
+              required
+            />
+          </div>
+
+          <div style={{ marginBottom: "24px" }}>
+            <label style={{ 
+              display: "block", 
+              marginBottom: "8px", 
+              color: "#555",
+              fontWeight: "500"
+            }}>
+              Password
+            </label>
+            <input
+              type="password"
+              value={credentials.password}
+              onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
+              style={{
+                width: "100%",
+                padding: "12px",
+                borderRadius: "6px",
+                border: "1px solid #ddd",
+                fontSize: "16px",
+                boxSizing: "border-box"
+              }}
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            style={{
+              width: "100%",
+              padding: "14px",
+              background: "#0070f3",
+              color: "#fff",
+              border: "none",
+              borderRadius: "6px",
+              fontSize: "16px",
+              fontWeight: "600",
+              cursor: "pointer",
+              transition: "background 0.2s"
+            }}
+            onMouseOver={(e) => e.target.style.background = "#0056b3"}
+            onMouseOut={(e) => e.target.style.background = "#0070f3"}
+          >
+            Login
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// Logout button component
+function LogoutButton({ onLogout }) {
+  return (
+    <button
+      onClick={onLogout}
+      style={{
+        position: "absolute",
+        top: "20px",
+        right: "20px",
+        padding: "8px 16px",
+        background: "#dc3545",
+        color: "#fff",
+        border: "none",
+        borderRadius: "6px",
+        cursor: "pointer",
+        fontSize: "14px",
+        fontWeight: "500",
+      }}
+    >
+      Logout
+    </button>
+  );
+}
+
 const resources = [
   { name: "Singers", api: "/api/singers", fields: ["name", "image", "role"] },
   { name: "Options", api: "/api/options", fields: ["name", "description", "image"], multilingual: true },
@@ -441,8 +595,49 @@ function ResourceAdmin({ name, api, fields, isMedia, mediaType, allowUpload, mul
 }
 
 export default function AdminPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Check authentication status on component mount
+    const authStatus = localStorage.getItem("adminAuthenticated") === "true";
+    setIsAuthenticated(authStatus);
+    setIsLoading(false);
+  }, []);
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("adminAuthenticated");
+    setIsAuthenticated(false);
+  };
+
+  // Show loading while checking authentication
+  if (isLoading) {
+    return (
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "center", 
+        alignItems: "center", 
+        minHeight: "100vh",
+        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+      }}>
+        <div style={{ color: "#fff", fontSize: "18px" }}>Loading...</div>
+      </div>
+    );
+  }
+
+  // Show login form if not authenticated
+  if (!isAuthenticated) {
+    return <LoginForm onLogin={handleLogin} />;
+  }
+
+  // Show admin dashboard if authenticated
   return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", padding: 32 }}>
+    <div style={{ maxWidth: 1200, margin: "0 auto", padding: 32, position: "relative"}}>
+      <LogoutButton onLogout={handleLogout} />
       <h1 style={{ fontSize: 32, marginBottom: 32 , color: "#fff"}}>Admin Dashboard</h1>
       {resources.map((r) => (
         <ResourceAdmin key={r.name} {...r} />
