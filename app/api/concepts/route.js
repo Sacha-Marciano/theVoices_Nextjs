@@ -3,8 +3,25 @@ import { ConceptModel } from '../../../database/models';
 
 function validate(data, model) {
   for (const key in model) {
-    if (typeof data[key] !== model[key]) {
-      return false;
+    if (model[key] === 'string') {
+      if (typeof data[key] !== 'string') {
+        return false;
+      }
+    } else if (model[key] === 'array') {
+      if (!Array.isArray(data[key])) {
+        return false;
+      }
+    } else if (typeof model[key] === 'object' && model[key] !== null) {
+      // Handle multilingual fields
+      if (typeof data[key] !== 'object' || data[key] === null) {
+        return false;
+      }
+      // Check if all required language keys exist
+      for (const lang in model[key]) {
+        if (typeof data[key][lang] !== model[key][lang]) {
+          return false;
+        }
+      }
     }
   }
   return true;
@@ -36,9 +53,11 @@ export async function PUT(request) {
   const id = searchParams.get('id');
   if (!id) return new Response('Missing id', { status: 400 });
   const data = await request.json();
+  
   if (!validate(data, ConceptModel)) {
     return new Response('Invalid data', { status: 400 });
   }
+  
   const updated = await ConceptService.update(id, data);
   return Response.json(updated);
 }
@@ -48,5 +67,5 @@ export async function DELETE(request) {
   const id = searchParams.get('id');
   if (!id) return new Response('Missing id', { status: 400 });
   await ConceptService.delete(id);
-  return new Response('Deleted', { status: 204 });
+  return new Response('Deleted', { status: 200 });
 } 

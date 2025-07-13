@@ -1,17 +1,35 @@
 "use client"
 
-import React, { useContext, useState } from "react";
-
-// TODO:
-// FILL MISSING TEXT DESCRIPTIONS
-
-import { options } from "../config";
+import React, { useContext, useState, useEffect } from "react";
 import { LangContext } from "../contexts/LangContext";
 
 const OptionsPage = () => {
   const { lang } = useContext(LangContext);
   const [optionToShow, setOptionToShow] = useState(0);
   const [openOption, setOpenOption] = useState(false);
+  const [options, setOptions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/options")
+      .then((res) => res.json())
+      .then((data) => {
+        setOptions(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to load options:", err);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center">
+        <div className="text-xl">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-[80vh] bg-background flex flex-col items-center w-full py-10 px-4">
@@ -25,28 +43,28 @@ const OptionsPage = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-6xl">
         {options.map((item, index) => (
           <button
-            key={index}
+            key={item._id || index}
             className="flex flex-col gap-4 items-center justify-center text-center bg-white p-6 rounded-3xl shadow-lg border-2 border-gold cursor-pointer min-h-[40vh] hover:scale-105 transition-transform focus:outline-none focus-visible:ring-4 focus-visible:ring-gold"
             onClick={() => {
               setOptionToShow(index);
               setOpenOption(true);
             }}
-            aria-label={`Open option ${item[lang].name}`}
+            aria-label={`Open option ${item.name[lang]}`}
           >
             <img
               src={item.image}
-              alt={item[lang].name}
+              alt={item.name[lang]}
               className="object-contain w-full h-40 rounded-2xl mb-2"
             />
-            <div>
-              <h2 className="text-2xl font-bold text-primary mb-2">{item[lang].name}</h2>
-              <p className="text-background text-sm line-clamp-3">{item[lang].description}</p>
+            <div className="w-full">
+              <h2 className="text-2xl font-bold text-primary mb-2">{item.name[lang]}</h2>
+              <p className="text-background text-sm line-clamp-3">{item.description[lang]}</p>
             </div>
           </button>
         ))}
       </div>
       {/* Modal/Lightbox */}
-      {openOption && (
+      {openOption && options.length > 0 && (
         <div
           className="fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-50"
           onClick={() => setOpenOption(false)}
@@ -71,12 +89,12 @@ const OptionsPage = () => {
             <div className="flex flex-col md:flex-row bg-background rounded-3xl shadow-lg border-4 border-gold p-6 max-w-3xl w-full items-center">
               <img
                 src={options[optionToShow].image}
-                alt={options[optionToShow][lang].name}
+                alt={options[optionToShow].name[lang]}
                 className="md:w-[300px] w-full h-48 object-cover rounded-2xl mb-4 md:mb-0 md:mr-6"
               />
               <div className="flex-1 text-center md:text-left">
-                <h1 className="text-gold font-bold text-3xl mb-4">{options[optionToShow][lang].name}</h1>
-                <p className="text-white text-lg">{options[optionToShow][lang].description}</p>
+                <h1 className="text-gold font-bold text-3xl mb-4">{options[optionToShow].name[lang]}</h1>
+                <p className="text-white text-lg">{options[optionToShow].description[lang]}</p>
               </div>
             </div>
             <button

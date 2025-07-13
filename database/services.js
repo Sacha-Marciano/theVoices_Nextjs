@@ -24,14 +24,20 @@ function createCrudService(collectionName) {
       const client = await connectToDb();
       const db = client.db();
       const { ObjectId } = await import('mongodb');
-      await db.collection(collectionName).updateOne({ _id: new ObjectId(id) }, { $set: data });
-      return db.collection(collectionName).findOne({ _id: new ObjectId(id) });
+      
+      // Remove _id from data to avoid MongoDB error about immutable field
+      const { _id, ...updateData } = data;
+      
+      const result = await db.collection(collectionName).updateOne({ _id: new ObjectId(id) }, { $set: updateData });
+      const updated = await db.collection(collectionName).findOne({ _id: new ObjectId(id) });
+      return updated;
     },
     async delete(id) {
       const client = await connectToDb();
       const db = client.db();
       const { ObjectId } = await import('mongodb');
-      return db.collection(collectionName).deleteOne({ _id: new ObjectId(id) });
+      const result = await db.collection(collectionName).deleteOne({ _id: new ObjectId(id) });
+      return result;
     },
   };
 }

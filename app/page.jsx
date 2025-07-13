@@ -1,7 +1,7 @@
 "use client";
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import Link from "next/link";
-import { concepts, homeDescription, options, singersDescriptions } from "./config";
+import { concepts, homeDescription } from "./config";
 import { LangContext } from "./contexts/LangContext";
 import SingerCard from "./components/SingerCard";
 import PhotoGrid from "./components/PhotoGrid";
@@ -11,6 +11,37 @@ import Concept from "./components/Concept";
 export default function Home() {
   const { lang } = useContext(LangContext);
   const text = homeDescription[lang];
+  const [singers, setSingers] = useState([]);
+  const [videos, setVideos] = useState([]);
+  const [conceptsDb, setConceptsDb] = useState([]);
+  const [optionsDb, setOptionsDb] = useState([]);
+  const [selectedConcept, setSelectedConcept] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/singers")
+      .then((res) => res.json())
+      .then((data) => setSingers(data));
+    fetch("/api/videos")
+      .then((res) => res.json())
+      .then((data) => setVideos(data));
+    fetch("/api/concepts")
+      .then((res) => res.json())
+      .then((data) => setConceptsDb(data));
+    fetch("/api/options")
+      .then((res) => res.json())
+      .then((data) => setOptionsDb(data));
+  }, []);
+
+  const handleConceptClick = (concept) => {
+    setSelectedConcept(concept);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedConcept(null);
+  };
 
   return (
     <main className="flex flex-col items-center w-full">
@@ -48,39 +79,46 @@ export default function Home() {
           {lang === "en" ? "Our Artists" : lang === "fr" ? "Nos Artistes" : "האמנים שלנו"}
         </h2>
         <div className="flex gap-6 flex-wrap justify-center">
-          {singersDescriptions.map((item, index) => (
-            <SingerCard key={index} name={item.name} imageSrc={item.imageSrc} role={item.role[lang]} />
+          {singers.map((item, index) => (
+            <SingerCard key={item._id || index} name={item.name} imageSrc={item.image} role={item.role} />
           ))}
         </div>
       </section>
 
-      {/* Recent Events/Concepts Section */}
+      {/* Concepts Section */}
       <section className="w-full bg-background py-10 px-4">
-        <h2 className="text-3xl font-bold text-gold mb-6 text-center">{lang === "en" ? "Recent Events" : lang === "fr" ? "Événements Récents" : "אירועים אחרונים"}</h2>
+        <h2 className="text-3xl font-bold text-gold mb-6 text-center">{lang === "en" ? "Our Concepts" : lang === "fr" ? "Nos Formules" : "הקונספטים שלנו"}</h2>
         <div className="flex gap-6 flex-wrap justify-center">
-          {concepts.slice(0, 4).map((item, index) => (
-            <Link href={`/concept/${index}`} key={index}>
-              <Concept isCard={true} name={item.name} imgSrc={item.imgSrc} info={item.info} />
-            </Link>
+          {conceptsDb.slice(0, 4).map((item, index) => (
+            <Concept 
+              key={item._id || index}
+              isCard={true} 
+              name={item.name} 
+              imgSrc={item.image} 
+              info={item.info} 
+              onClick={() => handleConceptClick(item)}
+            />
           ))}
         </div>
         <div className="flex justify-center mt-6">
-          <Link href="/concept" className="text-gold hover:text-primary font-bold text-lg underline">{lang === "en" ? "See All Events" : lang === "fr" ? "Voir tous les événements" : "לכל האירועים"}</Link>
+          <Link href="/concept" className="text-gold hover:text-primary font-bold text-lg underline">{lang === "en" ? "See All Concepts" : lang === "fr" ? "Voir toutes les formules" : "לכל הקונספטים"}</Link>
         </div>
       </section>
 
       {/* Videos Section */}
       <section className="w-full bg-primary py-10 px-4 flex flex-col items-center">
         <h2 className="text-3xl font-bold text-white mb-6">{lang === "en" ? "Videos" : lang === "fr" ? "Vidéos" : "סרטונים"}</h2>
-        <div className="w-full max-w-3xl aspect-video mb-6 rounded-lg overflow-hidden shadow-lg">
-          <iframe
-            src="https://www.youtube.com/embed/aXtZP_-frJ4"
-            title="The Voices"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className="w-full h-full"
-          ></iframe>
-        </div>
+        {videos.length > 0 && (
+          <div className="w-full max-w-3xl aspect-video mb-6 rounded-lg overflow-hidden shadow-lg">
+            <iframe
+              src={videos[0].url}
+              title={videos[0].title || "The Voices"}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full"
+            ></iframe>
+          </div>
+        )}
         <Link href="/videos" className="bg-gold text-background font-bold px-6 py-2 rounded-full shadow hover:bg-white hover:text-primary transition">{lang === "en" ? "See More Videos" : lang === "fr" ? "Voir plus de vidéos" : "עוד סרטונים"}</Link>
       </section>
 
@@ -94,11 +132,11 @@ export default function Home() {
       <section className="w-full bg-background py-10 px-4">
         <h2 className="text-3xl font-bold text-gold mb-6 text-center">{lang === "en" ? "Options" : lang === "fr" ? "Options" : "אופציות"}</h2>
         <div className="flex gap-6 flex-wrap justify-center">
-          {options.map((item, index) => (
-            <Link href="/options" key={index}>
+          {optionsDb.slice(0, 4).map((item, index) => (
+            <Link href="/options" key={item._id || index}>
               <div className="h-[300px] w-[220px] md:w-[320px] rounded-2xl overflow-hidden shadow-lg relative group bg-white">
                 <img src={item.image} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                <div className="absolute bottom-0 left-0 right-0 bg-primary/80 text-white text-center py-3 text-lg font-bold">{item[lang].name}</div>
+                <div className="absolute bottom-0 left-0 right-0 bg-primary/80 text-white text-center py-3 text-lg font-bold">{item.name[lang]}</div>
               </div>
             </Link>
           ))}
@@ -112,6 +150,101 @@ export default function Home() {
       <section className="w-full bg-background py-8">
         <ScrollingImages />
       </section>
+
+      {/* Concept Description Modal */}
+      {showModal && selectedConcept && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto relative">
+            {/* Close Button */}
+            <button
+              onClick={closeModal}
+              className="absolute top-4 right-4 z-10 bg-primary text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-hover transition-colors"
+              aria-label="Close"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Modal Content */}
+            <div className="p-6">
+              <div className="flex flex-col lg:flex-row gap-8">
+                {/* Image Section */}
+                <div className="lg:w-[40%] flex-shrink-0">
+                  <div className="w-full h-80 lg:h-96 rounded-3xl overflow-hidden shadow-lg">
+                    <img
+                      src={selectedConcept.image}
+                      alt={selectedConcept.name[lang]}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+
+                {/* Content Section */}
+                <div className="lg:w-[60%] flex-1">
+                  <h2 className="text-3xl md:text-4xl font-black text-primary mb-6 border-b-4 border-primary pb-2">
+                    {selectedConcept.name[lang]}
+                  </h2>
+                  
+                  <div className="space-y-6">
+                    {selectedConcept.info && selectedConcept.info.length > 0 ? (
+                      selectedConcept.info.map((item, index) => (
+                        <div key={index} className="bg-background/5 rounded-xl p-4">
+                          <h3 className="text-xl font-bold text-primary mb-3">
+                            {item.title?.[lang]}
+                          </h3>
+                          {item.description?.[lang] && (
+                            <div className="space-y-2">
+                              {Array.isArray(item.description[lang]) ? 
+                                item.description[lang].map((desc, descIndex) => (
+                                  <p key={descIndex} className="text-background text-lg leading-relaxed">
+                                    {desc}
+                                  </p>
+                                ))
+                                : 
+                                <p className="text-background text-lg leading-relaxed">
+                                  {item.description[lang]}
+                                </p>
+                              }
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="bg-background/5 rounded-xl p-4">
+                        <p className="text-background text-lg leading-relaxed">
+                          {lang === "en" 
+                            ? "No detailed information available for this concept. Please contact us for more details." 
+                            : lang === "fr" 
+                            ? "Aucune information détaillée disponible pour cette formule. Veuillez nous contacter pour plus de détails." 
+                            : "אין מידע מפורט זמין עבור קונספט זה. אנא צרו קשר לפרטים נוספים."}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Contact CTA */}
+                  <div className="mt-8 pt-6 border-t-2 border-gold">
+                    <p className="text-background text-lg mb-4">
+                      {lang === "en" 
+                        ? "Interested in this concept? Contact us for more details and pricing!" 
+                        : lang === "fr" 
+                        ? "Intéressé par cette formule ? Contactez-nous pour plus de détails et tarifs !" 
+                        : "מעוניינים בקונספט זה? צרו קשר לפרטים נוספים ומחירים!"}
+                    </p>
+                    <Link 
+                      href="/contacts" 
+                      className="inline-block bg-gold text-background font-bold text-lg px-8 py-3 rounded-full shadow-lg hover:bg-primary hover:text-white transition-colors"
+                    >
+                      {lang === "en" ? "Contact Us" : lang === "fr" ? "Nous Contacter" : "צרו קשר"}
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

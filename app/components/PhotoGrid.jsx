@@ -1,10 +1,17 @@
 "use client";
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import Link from "next/link";
 import { LangContext } from "../contexts/LangContext";
 
 const PhotoGrid = () => {
   const { lang } = useContext(LangContext);
+  const [images, setImages] = useState([]);
+
+  useEffect(() => {
+    fetch("/api/pictures")
+      .then((res) => res.json())
+      .then((data) => setImages(data));
+  }, []);
 
   return (
     <div className="w-full relative flex flex-col items-center justify-center">
@@ -16,10 +23,10 @@ const PhotoGrid = () => {
         </h2>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 w-full z-0">
-        {new Array(25).fill(null).map((img, index) => (
-          <div key={index} className="relative group h-32 sm:h-40 md:h-44 lg:h-48 w-full overflow-hidden rounded-2xl shadow-md">
+        {images.slice(0, 15).map((img, index) => (
+          <div key={img._id || index} className="relative group h-32 sm:h-40 md:h-44 lg:h-48 w-full overflow-hidden rounded-2xl shadow-md">
             <img
-              src={`assets/pics/${index + 1}.jpg`}
+              src={img.url}
               alt={`Event photo ${index + 1}`}
               className="w-full h-full object-cover rounded-2xl group-hover:scale-110 transition-transform duration-300"
             />

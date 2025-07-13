@@ -48,5 +48,5 @@ export async function DELETE(request) {
   const id = searchParams.get('id');
   if (!id) return new Response('Missing id', { status: 400 });
   await PictureService.delete(id);
-  return new Response('Deleted', { status: 204 });
+  return new Response('Deleted', { status: 200 });
 } 

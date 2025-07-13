@@ -1,12 +1,20 @@
 "use client"
-import { singersDescriptions, theVoicesDescription } from "../config";
+import { theVoicesDescription } from "../config";
 import { LangContext } from "../contexts/LangContext";
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import SingerCard from "../components/SingerCard";
 
 const VoicesPage = () => {
   const { lang } = useContext(LangContext);
   const text = theVoicesDescription[lang];
+  const [singers, setSingers] = useState([]);
+
+  useEffect(() => {
+    fetch("/api/singers")
+      .then((res) => res.json())
+      .then((data) => setSingers(data));
+  }, []);
+
   return (
     <main className="bg-background min-h-[80vh] flex flex-col items-center w-full">
       {/* Hero Section */}
@@ -30,8 +38,8 @@ const VoicesPage = () => {
       <section className="w-full py-10 px-4 bg-background flex flex-col items-center">
         <h2 className="text-3xl font-bold text-gold mb-8 text-center">{lang === "en" ? "Meet the Voices" : lang === "fr" ? "Rencontrez les Voix" : "הכירו את הלהקה"}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 w-full max-w-6xl">
-          {singersDescriptions.map((item, index) => (
-            <SingerCard key={index} name={item.name} imageSrc={item.imageSrc} role={item.role[lang]} />
+          {singers.map((item, index) => (
+            <SingerCard key={item._id || index} name={item.name} imageSrc={item.image} role={item.role} />
           ))}
         </div>
       </section>
