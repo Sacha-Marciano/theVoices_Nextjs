@@ -1,4 +1,4 @@
-# The Voices - Multilingual Music Platform
+git add# The Voices - Multilingual Music Platform
 
 A modern, multilingual Next.js web application showcasing music artists, concepts, and media content with a comprehensive admin panel for content management.
 
