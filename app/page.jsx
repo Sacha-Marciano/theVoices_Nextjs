@@ -7,6 +7,7 @@ import SingerCard from "./components/SingerCard";
 import PhotoGrid from "./components/PhotoGrid";
 import ScrollingImages from "./components/ScrollingImages";
 import Concept from "./components/Concept";
+import ReactPlayer from "react-player";
 
 export default function Home() {
   const { lang } = useContext(LangContext);
@@ -110,13 +111,13 @@ export default function Home() {
         <h2 className="text-3xl font-bold text-white mb-6">{lang === "en" ? "Videos" : lang === "fr" ? "Vidéos" : "סרטונים"}</h2>
         {videos.length > 0 && (
           <div className="w-full max-w-3xl aspect-video mb-6 rounded-lg overflow-hidden shadow-lg">
-            <iframe
-              src={videos[0].url}
-              title={videos[0].title || "The Voices"}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="w-full h-full"
-            ></iframe>
+            <ReactPlayer
+              url={videos[0].url}
+              width="100%"
+              height="100%"
+              controls
+              style={{ borderRadius: '0.5rem', overflow: 'hidden' }}
+            />
           </div>
         )}
         <Link href="/videos" className="bg-gold text-background font-bold px-6 py-2 rounded-full shadow hover:bg-white hover:text-primary transition">{lang === "en" ? "See More Videos" : lang === "fr" ? "Voir plus de vidéos" : "עוד סרטונים"}</Link>

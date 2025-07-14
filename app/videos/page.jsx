@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from "react";
+import ReactPlayer from "react-player";
 
 const VideosPage = () => {
   const [videos, setVideos] = useState([]);
@@ -22,15 +23,13 @@ const VideosPage = () => {
           >
             <h2 className={`text-primary text-2xl md:text-3xl font-bold mb-4 text-center`}>{video.title}</h2>
             <div className="w-full aspect-video max-w-xl rounded-2xl overflow-hidden shadow-md border-4 border-gold bg-background">
-              <iframe
-                src={video.url}
-                title={video.title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="w-full h-full rounded-2xl"
-                tabIndex={0}
-                aria-label={video.title}
-              ></iframe>
+              <ReactPlayer
+                url={video.url}
+                width="100%"
+                height="100%"
+                controls
+                style={{ borderRadius: '1rem', overflow: 'hidden' }}
+              />
             </div>
           </div>
         ))}

@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import ReactPlayer from "react-player";
 
 // Login component
 function LoginForm({ onLogin }) {
@@ -395,12 +396,12 @@ function ResourceAdmin({ name, api, fields, isMedia, mediaType, allowUpload, mul
               ) : (
                 <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center" }}>
                   <div style={{ fontWeight: "bold", fontSize: 14, marginBottom: 4, marginTop:15, textAlign: "center", color: "#333", background: "rgba(255,255,255,0.7)", borderRadius: 4, padding: "2px 4px" }}>{item.title}</div>
-                  <iframe
-                    src={item.url}
-                    title={item.title || "Video"}
-                    style={{ width: "100%", height: "100%", border: "none" }}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
+                  <ReactPlayer
+                    url={item.url}
+                    width="100%"
+                    height="100%"
+                    controls
+                    style={{ borderRadius: 8, overflow: 'hidden' }}
                   />
                 </div>
               )}
