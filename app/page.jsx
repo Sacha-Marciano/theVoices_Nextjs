@@ -9,6 +9,36 @@ import ScrollingImages from "./components/ScrollingImages";
 import Concept from "./components/Concept";
 import ReactPlayer from "react-player";
 
+function normalizeYouTubeUrl(url) {
+  if (!url) return url;
+  // youtu.be short links
+  let match = url.match(/^https?:\/\/youtu\.be\/([\w-]+)/);
+  if (match) {
+    return `https://www.youtube.com/watch?v=${match[1]}`;
+  }
+  // youtube shorts
+  match = url.match(/^https?:\/\/(?:www\.)?youtube\.com\/shorts\/([\w-]+)/);
+  if (match) {
+    return `https://www.youtube.com/watch?v=${match[1]}`;
+  }
+  // youtube embed
+  match = url.match(/^https?:\/\/(?:www\.)?youtube\.com\/embed\/([\w-]+)/);
+  if (match) {
+    return `https://www.youtube.com/watch?v=${match[1]}`;
+  }
+  // youtube watch (strip extra params)
+  match = url.match(/^https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([\w-]+)/);
+  if (match) {
+    return `https://www.youtube.com/watch?v=${match[1]}`;
+  }
+  // fallback: strip params from any youtube url
+  match = url.match(/([\w-]{11})/);
+  if (/youtube\.com|youtu\.be/.test(url) && match) {
+    return `https://www.youtube.com/watch?v=${match[1]}`;
+  }
+  return url;
+}
+
 export default function Home() {
   const { lang } = useContext(LangContext);
   const text = homeDescription[lang];
@@ -111,13 +141,27 @@ export default function Home() {
         <h2 className="text-3xl font-bold text-white mb-6">{lang === "en" ? "Videos" : lang === "fr" ? "Vidéos" : "סרטונים"}</h2>
         {videos.length > 0 && (
           <div className="w-full max-w-3xl aspect-video mb-6 rounded-lg overflow-hidden shadow-lg">
-            <ReactPlayer
-              url={videos[0].url}
-              width="100%"
-              height="100%"
-              controls
-              style={{ borderRadius: '0.5rem', overflow: 'hidden' }}
-            />
+            {(() => {
+              const url = normalizeYouTubeUrl(videos[0].url);
+              const match = url.match(/[?&]v=([\w-]{11})/);
+              const videoId = match ? match[1] : null;
+              if (videoId) {
+                return (
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    src={`https://www.youtube.com/embed/${videoId}`}
+                    title={videos[0].title || "YouTube video"}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    style={{ borderRadius: '0.5rem', overflow: 'hidden', minHeight: 150 }}
+                  />
+                );
+              } else {
+                return <div style={{ color: 'red', padding: 8 }}>Invalid YouTube URL</div>;
+              }
+            })()}
           </div>
         )}
         <Link href="/videos" className="bg-gold text-background font-bold px-6 py-2 rounded-full shadow hover:bg-white hover:text-primary transition">{lang === "en" ? "See More Videos" : lang === "fr" ? "Voir plus de vidéos" : "עוד סרטונים"}</Link>

@@ -277,12 +277,18 @@ function ResourceAdmin({ name, api, fields, isMedia, mediaType, allowUpload, mul
     setUploading(true);
     const method = editId ? "PUT" : "POST";
     const url = editId ? `${api}?id=${editId}` : api;
-    
+
+    // Normalize YouTube URL if this is a video resource
+    let dataToSave = { ...formData };
+    if (name === "Videos" && dataToSave.url) {
+      dataToSave.url = normalizeYouTubeUrl(dataToSave.url);
+    }
+
     try {
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(dataToSave),
       });
       
       if (!response.ok) {
@@ -383,7 +389,7 @@ function ResourceAdmin({ name, api, fields, isMedia, mediaType, allowUpload, mul
       ) : isMedia ? (
         <div style={{ display: "flex", overflowX: "auto", gap: 16, padding: 8, background: "#fafafa", borderRadius: 8, minHeight: 160 }}>
           {items.map((item) => (
-            <div key={item._id} style={{ position: "relative", minWidth: 200, maxWidth: 240, height: 150, display: "flex", alignItems: "center", justifyContent: "center", background: "#eee", borderRadius: 8, overflow: "hidden" }}>
+            <div key={item._id} style={{ position: "relative", minWidth: 800, maxWidth: 960, width: '100%', height: 'auto', display: "flex", flexDirection: 'column', alignItems: "center", justifyContent: "center", background: "#eee", borderRadius: 8, overflow: "hidden", marginBottom: 32 }}>
               <button
                 onClick={() => handleDelete(item._id)}
                 style={{ position: "absolute", bottom: 8, right: 8, zIndex: 2, background: "rgba(255,255,255,0.8)", border: "none", borderRadius: "50%", width: 28, height: 28, cursor: "pointer", fontWeight: "bold", color: "#d00" }}
@@ -396,13 +402,30 @@ function ResourceAdmin({ name, api, fields, isMedia, mediaType, allowUpload, mul
               ) : (
                 <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center" }}>
                   <div style={{ fontWeight: "bold", fontSize: 14, marginBottom: 4, marginTop:15, textAlign: "center", color: "#333", background: "rgba(255,255,255,0.7)", borderRadius: 4, padding: "2px 4px" }}>{item.title}</div>
-                  <ReactPlayer
-                    url={item.url}
-                    width="100%"
-                    height="100%"
-                    controls
-                    style={{ borderRadius: 8, overflow: 'hidden' }}
-                  />
+                  {(() => {
+                    const url = normalizeYouTubeUrl(item.url);
+                    // Extract video ID from normalized URL
+                    const match = url.match(/[?&]v=([\w-]{11})/);
+                    const videoId = match ? match[1] : null;
+                    if (videoId) {
+                      return (
+                        <div style={{ position: 'relative', width: '100%', maxWidth: '960px', paddingBottom: '56.25%', height: 0 }}>
+                          <iframe
+                            width="960"
+                            height="540"
+                            src={`https://www.youtube.com/embed/${videoId}`}
+                            title={item.title || "YouTube video"}
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            style={{ borderRadius: 8, overflow: 'hidden', position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+                          />
+                        </div>
+                      );
+                    } else {
+                      return <div style={{ color: 'red', padding: 8 }}>Invalid YouTube URL</div>;
+                    }
+                  })()}
                 </div>
               )}
             </div>
@@ -593,6 +616,36 @@ function ResourceAdmin({ name, api, fields, isMedia, mediaType, allowUpload, mul
       `}</style>
     </div>
   );
+}
+
+function normalizeYouTubeUrl(url) {
+  if (!url) return url;
+  // youtu.be short links
+  let match = url.match(/^https?:\/\/youtu\.be\/([\w-]+)/);
+  if (match) {
+    return `https://www.youtube.com/watch?v=${match[1]}`;
+  }
+  // youtube shorts
+  match = url.match(/^https?:\/\/(?:www\.)?youtube\.com\/shorts\/([\w-]+)/);
+  if (match) {
+    return `https://www.youtube.com/watch?v=${match[1]}`;
+  }
+  // youtube embed
+  match = url.match(/^https?:\/\/(?:www\.)?youtube\.com\/embed\/([\w-]+)/);
+  if (match) {
+    return `https://www.youtube.com/watch?v=${match[1]}`;
+  }
+  // youtube watch (strip extra params)
+  match = url.match(/^https?:\/\/(?:www\.)?youtube\.com\/watch\?v=([\w-]+)/);
+  if (match) {
+    return `https://www.youtube.com/watch?v=${match[1]}`;
+  }
+  // fallback: strip params from any youtube url
+  match = url.match(/([\w-]{11})/);
+  if (/youtube\.com|youtu\.be/.test(url) && match) {
+    return `https://www.youtube.com/watch?v=${match[1]}`;
+  }
+  return url;
 }
 
 export default function AdminPage() {
