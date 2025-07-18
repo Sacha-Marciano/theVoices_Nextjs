@@ -283,10 +283,6 @@ Ensure all environment variables are properly configured in your production envi
 
 This project is private and proprietary.
 
-## 🆘 Support
-
-For support and questions, please contact the development team.
-
 ---
 
 **The Voices** - La voix en plus
