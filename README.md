@@ -113,11 +113,6 @@ npm run dev
 
 The application will be available at `http://localhost:3000`
 
-## 🔐 Admin Access
-
-### Login Credentials
-- **Username**: `admin`
-- **Password**: `admin123`
 
 ### Admin Features
 - **Authentication**: Secure login system with localStorage persistence
